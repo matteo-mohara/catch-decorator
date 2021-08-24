@@ -1,10 +1,11 @@
-type HandlerFunction = (error: Error, ctx: any) => void;
+type HandlerFunction = <T>(error: Error, ctx: any) => T;
 
 function _handleError(ctx: any, errorType: any, handler: HandlerFunction, error: Error) {
   // Check if error is instance of given error type
   if (typeof handler === 'function' && error instanceof errorType) {
     // Run handler with error object and class context
-    handler.call(null, error, ctx);
+    const response = handler.call(null, error, ctx);
+    if (response) return response;
   } else {
     // Throw error further
     // Next decorator in chain can catch it
@@ -29,14 +30,14 @@ function _generateDescriptor(
       if (result && result instanceof Promise) {
         // Return promise
         return result.catch((error: any) => {
-          _handleError(this, errorType, handler, error);
+          return _handleError(this, errorType, handler, error);
         });
       }
 
       // Return actual result
       return result;
     } catch (error) {
-      _handleError(this, errorType, handler, error);
+      return _handleError(this, errorType, handler, error);
     }
   };
 
